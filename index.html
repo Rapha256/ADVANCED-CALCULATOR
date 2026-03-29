@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .calculator {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            width: 350px;
+        }
+        
+        .display {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: right;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        
+        .previous-operand {
+            color: #6c757d;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        
+        .current-operand {
+            color: #212529;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        button {
+            padding: 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.95);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .number {
+            background: #e9ecef;
+            color: #212529;
+        }
+        
+        .operator {
+            background: #667eea;
+            color: white;
+        }
+        
+        .equals {
+            background: #48bb78;
+            color: white;
+            grid-column: span 2;
+        }
+        
+        .clear {
+            background: #fc8181;
+            color: white;
+        }
+        
+        .delete {
+            background: #f6ad55;
+            color: white;
+        }
+        
+        .function {
+            background: #9f7aea;
+            color: white;
+        }
+        
+        .memory {
+            background: #b794f4;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display">
+            <div class="previous-operand" id="previousOperand"></div>
+            <div class="current-operand" id="currentOperand">0</div>
+        </div>
+        <div class="buttons">
+            <!-- TWEAK POINT: Add more buttons or rearrange layout -->
+            <button class="memory" onclick="memoryRecall()">MR</button>
+            <button class="memory" onclick="memoryClear()">MC</button>
+            <button class="memory" onclick="memoryAdd()">M+</button>
+            <button class="clear" onclick="clearAll()">AC</button>
+            
+            <button class="function" onclick="appendOperator('(')">(</button>
+            <button class="function" onclick="appendOperator(')')">)</button>
+            <button class="function" onclick="calculatePercentage()">%</button>
+            <button class="delete" onclick="deleteLast()">⌫</button>
+            
+            <button class="number" onclick="appendNumber('7')">7</button>
+            <button class="number" onclick="appendNumber('8')">8</button>
+            <button class="number" onclick="appendNumber('9')">9</button>
+            <button class="operator" onclick="appendOperator('/')">÷</button>
+            
+            <button class="number" onclick="appendNumber('4')">4</button>
+            <button class="number" onclick="appendNumber('5')">5</button>
+            <button class="number" onclick="appendNumber('6')">6</button>
+            <button class="operator" onclick="appendOperator('*')">×</button>
+            
+            <button class="number" onclick="appendNumber('1')">1</button>
+            <button class="number" onclick="appendNumber('2')">2</button>
+            <button class="number" onclick="appendNumber('3')">3</button>
+            <button class="operator" onclick="appendOperator('-')">-</button>
+            
+            <button class="number" onclick="appendNumber('0')">0</button>
+            <button class="number" onclick="appendDecimal()">.</button>
+            <button class="function" onclick="calculateSquare()">x²</button>
+            <button class="operator" onclick="appendOperator('+')">+</button>
+            
+            <button class="equals" onclick="calculateResult()">=</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // ADVANCED CALCULATOR
+        // ============================================
+        
+        // Variables to store calculator state
+        let currentOperand = '0';
+        let previousOperand = '';
+        let operation = null;
+        let shouldResetScreen = false;
+        let memoryValue = 0;
+        
+        // DOM elements
+        const currentOperandElement = document.getElementById('currentOperand');
+        const previousOperandElement = document.getElementById('previousOperand');
+        
+        // Function to update the display
+        function updateDisplay() {
+            // TWEAK POINT: Format numbers with commas or decimals
+            currentOperandElement.textContent = currentOperand;
+            previousOperandElement.textContent = previousOperand;
+        }
+        
+        // Function to append numbers
+        function appendNumber(number) {
+            // TWEAK POINT: Limit number length
+            if (shouldResetScreen) {
+                currentOperand = '';
+                shouldResetScreen = false;
+            }
+            
+            // Prevent multiple leading zeros
+            if (currentOperand === '0' && number === '0') return;
+            
+            // Replace leading zero with the number
+            if (currentOperand === '0' && number !== '.') {
+                currentOperand = number;
+            } else {
+                currentOperand += number;
+            }
+            
+            // Limit display length
+            if (currentOperand.length > 15) {
+                currentOperand = currentOperand.slice(0, 15);
+            }
+            
+            updateDisplay();
+        }
+        
+        // Function to append decimal point
+        function appendDecimal() {
+            if (shouldResetScreen) {
+                currentOperand = '0';
+                shouldResetScreen = false;
+            }
+            
+            // Prevent multiple decimals
+            if (currentOperand.includes('.')) return;
+            
+            currentOperand += '.';
+            updateDisplay();
+        }
+        
+        // Function to append operators
+        function appendOperator(op) {
+            // TWEAK POINT: Add more operators like power, root
+            if (currentOperand === '' && previousOperand === '') return;
+            
+            if (currentOperand !== '' && previousOperand !== '') {
+                calculateResult();
+            }
+            
+            operation = op;
+            previousOperand = currentOperand + ' ' + getOperatorSymbol(op);
+            currentOperand = '';
+            shouldResetScreen = false;
+            updateDisplay();
+        }
+        
+        // Helper to get operator symbol for display
+        function getOperatorSymbol(op) {
+            const symbols = {
+                '+': '+',
+                '-': '-',
+                '*': '×',
+                '/': '÷'
+            };
+            return symbols[op] || op;
+        }
+        
+        // Function to calculate result
+        function calculateResult() {
+            // TWEAK POINT: Add more complex calculations
+            if (currentOperand === '' || previousOperand === '') return;
+            
+            let result;
+            const prev = parseFloat(previousOperand);
+            const current = parseFloat(currentOperand);
+            
+            if (isNaN(prev) || isNaN(current)) return;
+            
+            // Perform calculation based on operation
+            switch (operation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        alert('Cannot divide by zero!');
+                        clearAll();
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    return;
+            }
+            
+            // Format result
+            result = parseFloat(result.toFixed(8));
+            currentOperand = result.toString();
+            operation = null;
+            previousOperand = '';
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+        
+        // Function to calculate percentage
+        function calculatePercentage() {
+            // TWEAK POINT: Change percentage calculation logic
+            if (currentOperand === '') return;
+            
+            let value = parseFloat(currentOperand);
+            value = value / 100;
+            currentOperand = value.toString();
+            updateDisplay();
+        }
+        
+        // Function to calculate square
+        function calculateSquare() {
+            // TWEAK POINT: Add more mathematical functions
+            if (currentOperand === '') return;
+            
+            let value = parseFloat(currentOperand);
+            value = value * value;
+            currentOperand = value.toString();
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+        
+        // Memory functions
+        function memoryRecall() {
+            currentOperand = memoryValue.toString();
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+        
+        function memoryClear() {
+            memoryValue = 0;
+        }
+        
+        function memoryAdd() {
+            if (currentOperand !== '') {
+                memoryValue += parseFloat(currentOperand);
+            }
+        }
+        
+        // Clear all
+        function clearAll() {
+            currentOperand = '0';
+            previousOperand = '';
+            operation = null;
+            shouldResetScreen = false;
+            updateDisplay();
+        }
+        
+        // Delete last character
+        function deleteLast() {
+            // TWEAK POINT: Implement better delete logic
+            if (currentOperand.length === 1) {
+                currentOperand = '0';
+            } else {
+                currentOperand = currentOperand.slice(0, -1);
+            }
+            updateDisplay();
+        }
+        
+        // Keyboard support
+        document.addEventListener('keydown', function(event) {
+            // TWEAK POINT: Add more keyboard shortcuts
+            const key = event.key;
+            
+            if (key >= '0' && key <= '9') {
+                appendNumber(key);
+            } else if (key === '.') {
+                appendDecimal();
+            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                appendOperator(key);
+            } else if (key === 'Enter' || key === '=') {
+                calculateResult();
+            } else if (key === 'Escape') {
+                clearAll();
+            } else if (key === 'Backspace') {
+                deleteLast();
+            } else if (key === '%') {
+                calculatePercentage();
+            }
+        });
+        
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
